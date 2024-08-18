@@ -148,20 +148,16 @@ static Map<String, dynamic> _handleResponse(http.Response response) {
 }
 
 
-// Fetch List of Advisors
-static Future<List<User>> fetchAdvisors() async {
-  final response = await http.get(Uri.parse('$baseUrl/listadvisors'));
+   static Future<http.Response> fetchAdvisors() async {
+    final response = await http.get(Uri.parse('$baseUrl/listadvisors'));
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body) as List;
-    return data.map((json) => User.fromJson(json)).toList();
-  } else {
-    final responseJson = jsonDecode(response.body);
-    throw Exception('Failed to fetch advisors: ${responseJson['error']}');
+    if (response.statusCode == 200) {
+      return response; // Return the raw response for further processing
+    } else {
+      final responseJson = jsonDecode(response.body);
+      throw Exception('Failed to fetch advisors: ${responseJson['error']}');
+    }
   }
-}
-
-
   static Future<List<User>> searchAdvisors(String keyword) async {
     final response = await http.post(
       Uri.parse('$baseUrl/advisors/search'),
@@ -294,4 +290,24 @@ static Future<Map<String, dynamic>> makePayment({
       return false;
     }
   }
+
+
+  static Future<Map<String, dynamic>> reportAdvisor({
+  required String reporterId,
+  required String advisorId,
+  required String description,
+}) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/advisors/report'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'reporter': reporterId,
+      'advisor': advisorId,
+      'description': description,
+    }),
+  );
+
+  return _handleResponse(response);
+}
+
 }

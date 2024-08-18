@@ -41,19 +41,17 @@ class AdvisorListScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final advisor = userProvider.advisors[index];
                     final advisorId = advisor.id;
-                    print(advisor.id);
                     final imageUrl = advisor.profilePicture != null
-                  
                         ? 'http://10.0.2.2:3000/api/image/${advisor.profilePicture!.replaceFirst('uploads/', '')}'
                         : 'assets/images/girl.png';
 
+                    // Use the averageRating from the backend response
+                    double averageRating = advisor.averageRating ?? 0;
+
                     return GestureDetector(
                       onTap: () {
-                        
-                        if (advisorId!= null && advisorId!.isNotEmpty) {
+                        if (advisorId != null && advisorId.isNotEmpty) {
                           // Navigate to the selected advisor's profile
-                           print("Advisor ID: $advisorId"); // Debugging line
-
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -61,8 +59,6 @@ class AdvisorListScreen extends StatelessWidget {
                             ),
                           );
                         } else {
-                     print("Advisoro ID: ${advisor.id}"); // Debugging line
-                          // Handle the error case where ID is null or empty
                           print('Advisor ID is empty or null');
                         }
                       },
@@ -81,8 +77,6 @@ class AdvisorListScreen extends StatelessWidget {
                                     ? NetworkImage(imageUrl)
                                     : AssetImage('assets/images/girl.png') as ImageProvider,
                               ),
-                             
-                          
                               SizedBox(height: 8),
                               Text(
                                 advisor.specialization ?? '',
@@ -107,9 +101,7 @@ class AdvisorListScreen extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: List.generate(5, (i) {
                                   return Icon(
-                                    i <
-                                            (advisor.reviews?.map((e) => e.rating).reduce((a, b) => a + b) ?? 0) /
-                                            (advisor.reviews?.length ?? 1)
+                                    i < averageRating.round()
                                         ? Icons.star
                                         : Icons.star_border,
                                     color: Colors.yellow,

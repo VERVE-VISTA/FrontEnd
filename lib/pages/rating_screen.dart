@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vervevista/pages/top_appbar.dart';
 import 'package:vervevista/providers/user_provider.dart';
+import 'package:vervevista/pages/report_screen.dart'; // Import the ReportingScreen
 
 class RatingScreen extends StatefulWidget {
   @override
@@ -22,9 +25,11 @@ class _RatingScreenState extends State<RatingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Rate Advisors'),
-        backgroundColor: Colors.purple,
+      appBar: TopAppBar(
+        title: 'Rating Screen',
+        onLogout: () {
+          _showLogoutConfirmationDialog(context);
+        },
       ),
       body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
@@ -150,7 +155,14 @@ class _RatingScreenState extends State<RatingScreen> {
                         child: IconButton(
                           icon: Image.asset('assets/images/report_b.png'),
                           onPressed: () {
-                            // Handle report logic here
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ReportingScreen(
+                                  advisorId: advisor.id,
+                                ),
+                              ),
+                            );
                           },
                         ),
                       ),
@@ -162,6 +174,38 @@ class _RatingScreenState extends State<RatingScreen> {
           );
         },
       ),
+    );
+  }
+   Future<void> _logout(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    Navigator.pushReplacementNamed(context, '/role');
+  }
+
+  void _showLogoutConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Logout'),
+          content: Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _logout(context);
+              },
+              child: Text('Yes'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

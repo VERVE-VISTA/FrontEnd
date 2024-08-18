@@ -170,13 +170,7 @@ class _AdvisorProfileScreenState extends State<AdvisorProfileScreen> {
                   ),
                   SizedBox(height: 8.0),
                   Row(
-                    children: List.generate(5, (index) {
-                      return Icon(
-                        Icons.star,
-                        color: Colors.yellow,
-                        size: 24,
-                      );
-                    }),
+                    children: _buildRatingStars(advisor.averageRating),
                   ),
                 ],
               ),
@@ -187,6 +181,24 @@ class _AdvisorProfileScreenState extends State<AdvisorProfileScreen> {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildRatingStars(double? averageRating) {
+    int fullStars = averageRating?.floor() ?? 0;
+    bool hasHalfStar = averageRating != null && averageRating - fullStars >= 0.5;
+    int emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+    return List<Widget>.generate(fullStars, (index) {
+      return Icon(Icons.star, color: Colors.yellow, size: 24);
+    })
+      ..addAll(List<Widget>.generate(
+        hasHalfStar ? 1 : 0,
+        (index) => Icon(Icons.star_half, color: Colors.yellow, size: 24),
+      ))
+      ..addAll(List<Widget>.generate(
+        emptyStars,
+        (index) => Icon(Icons.star_border, color: Colors.yellow, size: 24),
+      ));
   }
 
   Widget _buildInfoCard({

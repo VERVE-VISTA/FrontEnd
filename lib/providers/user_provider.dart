@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vervevista/services/user_apiservice.dart'; // Make sure to import your UserApiService
@@ -183,14 +185,32 @@ Future<void> fetchUserProfileById(String userId) async {
   return prefs.getString('userId') ?? ''; // Return empty string if userId is not found
 }
 
- Future<void> fetchAdvisors() async {
+
+  Future<void> fetchAdvisors() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final List<User> fetchedAdvisors = await UserApiService.fetchAdvisors();
-      _advisors = fetchedAdvisors;
-      _error = null;
+      final response = await UserApiService.fetchAdvisors();
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        _advisors = data.map((json) => User.fromJson(json)).toList();
+
+        // Extract and handle reviews for each advisor
+        for (final advisor in _advisors) {
+          if (advisor.reviews != null) {
+            for (final review in advisor.reviews!) {
+              print('Advisor ID: ${advisor.id}, Rating: ${review.rating}, Comment: ${review.comment}');
+            }
+          }
+        }
+
+        _error = null;
+      } else {
+        final responseJson = jsonDecode(response.body);
+        _error = 'Failed to fetch advisors: ${responseJson['error']}';
+      }
     } catch (e) {
       _error = e.toString();
     }
@@ -198,6 +218,7 @@ Future<void> fetchUserProfileById(String userId) async {
     _isLoading = false;
     notifyListeners();
   }
+
 
 
 
@@ -355,4 +376,31 @@ Future<void> makePayment({
     notifyListeners();
   }
 
+
+ Future<void> reportAdvisor({
+    required String advisorId,
+    required String description,
+  }) async {
+    try {
+      final reporterId = _userId ?? ''; // Use the current user's ID
+      final result = await UserApiService.reportAdvisor(
+        reporterId: reporterId,
+        advisorId: advisorId,
+        description: description,
+      );
+
+      if (result.containsKey('message')) {
+        print('Report submitted successfully: ${result['message']}');
+        // Handle successful report submission, e.g., show a message or update UI
+      } else if (result.containsKey('error')) {
+        print('Report submission error: ${result['error']}');
+        _errorMessage = result['error'];
+      }
+    } catch (e) {
+      print('Failed to report advisor: ${e.toString()}');
+      _errorMessage = e.toString();
+    } finally {
+      notifyListeners();
+    }
+  }
 }
