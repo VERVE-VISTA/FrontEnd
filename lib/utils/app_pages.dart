@@ -15,7 +15,6 @@ class AppPages {
     GetPage(name: '/signinA', page: () => LoginPageA()),
     GetPage(name: '/role', page: () => RoleSelectionPage()),
 
-
     GetPage(name: '/home', page: () => HomePage()),
     GetPage(name: '/splash', page: () => LaunchScreen()),
     GetPage(name: '/market', page: () => MarketingSMHome()),

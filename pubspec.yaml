@@ -44,7 +44,7 @@ dependencies:
   http: ^0.13.3
   flutter_rating_bar: ^4.0.0
   json_annotation: ^4.8.0  # Make sure this is present
-
+  table_calendar: ^3.0.8
 dev_dependencies:
   flutter_test:
     sdk: flutter

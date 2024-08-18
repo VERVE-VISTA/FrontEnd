@@ -5,19 +5,24 @@ import 'package:vervevista/model/user_model.dart';
 class UserProvider with ChangeNotifier {
 String? _userId =''; // Ensure _userId is not null
   List<User> _advisors = [];
+  User? _advisor;
 bool _isLoading = false;
   String? _error;
   String _username = '';
   String _password = '';
+    Map<String, dynamic>? _bookingResult;
+  Map<String, dynamic>? get bookingResult => _bookingResult;
+
   User? _user;
   String get userId => _userId??"";
   String get username => _username;
   String get password => _password;
 List<User> get advisors => _advisors;
+  User? get advisor => _advisor;
   bool get isLoading => _isLoading;
   String? get error => _error;
-    String _errorMessage = '';
-    String get errorMessage => _errorMessage;
+    String? _errorMessage = '';
+    String? get errorMessage => _errorMessage;
 
   // Method to handle user signup
  Future<void> signupUser({
@@ -72,30 +77,43 @@ List<User> get advisors => _advisors;
 }
 
 
-  // Method to handle advisor signup
-  Future<void> signupAdvisor({
+   Future<void> signupAdvisor({
     required String username,
     required String password,
     required String name,
     required String specialization,
     required double hourlyRate,
-    required String availability,
+    required List<String> availability,
+    String? profilePicture,
+    String? servicesOffered,
+    String? consultationPackageName,
+    double? consultationPackagePrice,
+    String? consultationPackageDescription,
   }) async {
-    final result = await UserApiService.signupAdvisor(
-      username: username,
-      password: password,
-      name: name,
-      specialization: specialization,
-      hourlyRate: hourlyRate,
-      availability: availability,
-    );
+    try {
+      final result = await UserApiService.signupAdvisor(
+        username: username,
+        password: password,
+        name: name,
+        specialization: specialization,
+        hourlyRate: hourlyRate,
+        availability: availability,
+        profilePicture: profilePicture,
+        servicesOffered: servicesOffered,
+        consultationPackageName: consultationPackageName,
+        consultationPackagePrice: consultationPackagePrice,
+        consultationPackageDescription: consultationPackageDescription,
+      );
 
-    if (result.containsKey('data')) {
-      // Handle successful advisor signup response
-      print('Advisor signup successful: ${result['data']}');
-    } else if (result.containsKey('error')) {
-      // Handle advisor signup error
-      print('Advisor signup error: ${result['error']}');
+      if (result.containsKey('data')) {
+        _userId = result['data']['_id'] ?? '';  // Update _userId based on response
+        print('Advisor signup successful: ${result['data']}');
+        notifyListeners();
+      } else if (result.containsKey('error')) {
+        print('Advisor signup error: ${result['error']}');
+      }
+    } catch (e) {
+      print('Failed to sign up advisor: ${e.toString()}');
     }
   }
 
@@ -217,4 +235,124 @@ Future<void> fetchUserProfileById(String userId) async {
       notifyListeners();
     }
   }
+
+
+Future<String?> bookAdvisor({
+  required String userId,
+  required String advisorId,
+  required String bookingDate,
+  required String communicationMethod,
+}) async {
+  try {
+    final result = await UserApiService.bookAdvisor(
+      userId: userId,
+      advisorId: advisorId,
+      bookingDate: bookingDate,
+      communicationMethod: communicationMethod,
+    );
+
+     if (result is Map<String, dynamic> && result.containsKey('bookingId')) {
+      final bookingId = result['bookingId'] as String;
+      print('Booking ID: $bookingId'); // For debugging purposes
+      return bookingId; // Return the bookingId
+    } else if (result is Map<String, dynamic> && result.containsKey('error')) {
+      print('Booking error: ${result['error']}');
+      return null;
+    } else {
+      print('No ID found');
+    }
+  } catch (e) {
+    print('Failed to book advisor: ${e.toString()}');
+    return null;
+  }
+  return null;
+}
+
+
+
+  // Fetch Advisor by ID
+Future<void> fetchAdvisorById(String advisorId) async {
+  print('Fetching advisor by ID: $advisorId');
+  try {
+    final response = await UserApiService.fetchAdvisorById(advisorId);
+    print('API response: $response');
+
+    if (response.containsKey('error')) {
+      _errorMessage = response['error'];
+      _advisor = null;
+      print('Error: $_errorMessage');
+    } else {
+      _advisor = User.fromJson(response['data']);
+      _errorMessage = null;
+      print('Fetched advisor data: ${_advisor.toString()}');
+    }
+
+    notifyListeners();
+  } catch (e) {
+    _errorMessage = e.toString();
+    _advisor = null;
+    print('Exception: $_errorMessage');
+    notifyListeners();
+  }
+}
+
+Future<void> makePayment({
+    required String bookingId,
+    required double amount,
+    required String cardNumber,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await UserApiService.makePayment(
+        bookingId: bookingId,
+        amount: amount,
+        cardNumber: cardNumber,
+      );
+
+      if (response.containsKey('error')) {
+        _errorMessage = response['error'];
+      } else {
+        // Handle success, if needed
+        _errorMessage = null;
+      }
+    } catch (e) {
+      _errorMessage = 'Failed to make payment: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+   Future<void> addRating({
+    required String advisorId,
+    required int rating,
+    String? comment,
+  }) async {
+    try {
+      final success = await UserApiService().addRating(
+        userId: _userId!,
+        advisorId: advisorId,
+        rating: rating,
+        comment: comment,
+      );
+
+      if (success) {
+        // Rating added successfully, you can update the UI or notify listeners here
+        print('Rating added successfully.');
+      } else {
+        // Handle failure
+        print('Failed to add rating.');
+        _errorMessage = 'Failed to add rating.';
+      }
+    } catch (e) {
+      // Handle exceptions
+      print('Exception occurred while adding rating: $e');
+      _errorMessage = 'Exception occurred: $e';
+    }
+
+    notifyListeners();
+  }
+
 }

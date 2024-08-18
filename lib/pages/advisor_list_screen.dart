@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vervevista/pages/advisor_profile_screen.dart';
 import 'package:vervevista/providers/user_provider.dart';
 import 'package:vervevista/pages/top_appbar.dart'; // Import TopAppBar
 
@@ -26,7 +27,7 @@ class AdvisorListScreen extends StatelessWidget {
                   return Center(child: CircularProgressIndicator());
                 }
 
-                if (userProvider.errorMessage.isNotEmpty) {
+                if (userProvider.errorMessage?.isNotEmpty ?? false) {
                   return Center(child: Text('Error: ${userProvider.errorMessage}'));
                 }
 
@@ -39,59 +40,84 @@ class AdvisorListScreen extends StatelessWidget {
                   itemCount: userProvider.advisors.length,
                   itemBuilder: (context, index) {
                     final advisor = userProvider.advisors[index];
+                    final advisorId = advisor.id;
+                    print(advisor.id);
                     final imageUrl = advisor.profilePicture != null
+                  
                         ? 'http://10.0.2.2:3000/api/image/${advisor.profilePicture!.replaceFirst('uploads/', '')}'
                         : 'assets/images/girl.png';
 
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      color: Colors.purple.shade100,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 30,
-                              backgroundImage: advisor.profilePicture != null
-                                  ? NetworkImage(imageUrl)
-                                  : AssetImage('assets/images/girl.png') as ImageProvider,
+                    return GestureDetector(
+                      onTap: () {
+                        
+                        if (advisorId!= null && advisorId!.isNotEmpty) {
+                          // Navigate to the selected advisor's profile
+                           print("Advisor ID: $advisorId"); // Debugging line
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AdvisorProfileScreen(advisorId: advisorId),
                             ),
-                            SizedBox(height: 8),
-                            Text(
-                              advisor.specialization ?? '',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                          );
+                        } else {
+                     print("Advisoro ID: ${advisor.id}"); // Debugging line
+                          // Handle the error case where ID is null or empty
+                          print('Advisor ID is empty or null');
+                        }
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        color: Colors.purple.shade100,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            children: [
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundImage: advisor.profilePicture != null
+                                    ? NetworkImage(imageUrl)
+                                    : AssetImage('assets/images/girl.png') as ImageProvider,
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              advisor.name ?? '',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.black54,
+                             
+                          
+                              SizedBox(height: 8),
+                              Text(
+                                advisor.specialization ?? '',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(5, (i) {
-                                return Icon(
-                                  i <
-                                          (advisor.reviews?.map((e) => e.rating).reduce((a, b) => a + b) ?? 0) /
-                                          (advisor.reviews?.length ?? 1)
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  color: Colors.yellow,
-                                );
-                              }),
-                            ),
-                          ],
+                              SizedBox(height: 4),
+                              Text(
+                                advisor.name ?? '',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black54,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(5, (i) {
+                                  return Icon(
+                                    i <
+                                            (advisor.reviews?.map((e) => e.rating).reduce((a, b) => a + b) ?? 0) /
+                                            (advisor.reviews?.length ?? 1)
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: Colors.yellow,
+                                  );
+                                }),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );

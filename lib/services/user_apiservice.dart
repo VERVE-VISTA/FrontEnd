@@ -41,14 +41,18 @@ static Future<Map<String, dynamic>> signup({
     return _handleResponse(response);
   }
 
-  // Sign Up Advisor
-  static Future<Map<String, dynamic>> signupAdvisor({
+static Future<Map<String, dynamic>> signupAdvisor({
     required String username,
     required String password,
     required String name,
     required String specialization,
     required double hourlyRate,
-    required String availability,
+    required List<String> availability,
+    String? profilePicture,  // Optional
+    String? servicesOffered,  // Optional
+    String? consultationPackageName,  // Flattened
+    double? consultationPackagePrice,  // Changed to double
+    String? consultationPackageDescription,  // Flattened
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/signupAd'),
@@ -60,10 +64,18 @@ static Future<Map<String, dynamic>> signup({
         'specialization': specialization,
         'hourlyRate': hourlyRate,
         'availability': availability,
+        'profilePicture': profilePicture,
+        'servicesOffered': servicesOffered,
+        'consultationPackageName': consultationPackageName,
+        'consultationPackagePrice': consultationPackagePrice,
+        'consultationPackageDescription': consultationPackageDescription,
       }),
     );
     return _handleResponse(response);
   }
+
+
+
 
   // Sign In Advisor
   static Future<Map<String, dynamic>> signinAdvisor({
@@ -167,6 +179,38 @@ static Future<List<User>> fetchAdvisors() async {
   }
 
 
+   // Fetch Advisor by ID
+  static Future<Map<String, dynamic>> fetchAdvisorById(String advisorId) async {
+    try {
+      if (advisorId == null || advisorId.isEmpty) {
+        throw Exception('Advisor ID is empty');
+      }
+
+      final response = await http.get(Uri.parse("$baseUrl/advisor/$advisorId"));
+      print('API Response: ${response.body}');
+
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data == null) {
+          throw Exception('Received empty or null data');
+        }
+
+        return {
+          'data': data,
+        };
+      } else {
+        final responseJson = jsonDecode(response.body);
+        throw Exception('Failed to fetch advisor: ${responseJson['error']}');
+      }
+    } catch (e) {
+      print('Failed to fetch advisor: ${e.toString()}');
+      throw Exception('Failed to fetch advisor: ${e.toString()}');
+    }
+  }
+
+
   // Fetch Advisors Sorted by Rating Descending
   static Future<List<User>> fetchAdvisorsSortedByRatingDesc() async {
     final response = await http.get(Uri.parse('$baseUrl/advisors/sort/desc'));
@@ -177,6 +221,77 @@ static Future<List<User>> fetchAdvisors() async {
     } else {
       final responseJson = jsonDecode(response.body);
       throw Exception('Failed to fetch sorted advisors: ${responseJson['error']}');
+    }
+  }
+
+  // Book an Advisor
+static Future<Map<String, dynamic>> bookAdvisor({
+  required String userId,
+  required String advisorId,
+  required String bookingDate,
+  required String communicationMethod,
+}) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/advisors/book'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'userId': userId,
+      'advisorId': advisorId,
+      'bookingDate': bookingDate,
+      'communicationMethod': communicationMethod,
+    }),
+  );
+ return json.decode(response.body) as Map<String, dynamic>;
+
+
+}
+
+
+
+static Future<Map<String, dynamic>> makePayment({
+  required String bookingId,
+  required double amount,
+  required String cardNumber,
+}) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/payment'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'bookingId': bookingId,
+      'amount': amount,
+      'cardNumber': cardNumber,
+    }),
+  );
+
+  return _handleResponse(response);
+}
+
+  Future<bool> addRating({
+    required String userId,
+    required String advisorId,
+    required int rating,
+    String? comment,
+  }) async {
+    final url = Uri.parse('$baseUrl/advisors/rate/$userId/$advisorId');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'rating': rating,
+        if (comment != null) 'comment': comment,  // Include comment if provided
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      // Rating added successfully
+      return true;
+    } else {
+      // Handle error
+      print('Failed to add rating: ${response.body}');
+      return false;
     }
   }
 }
