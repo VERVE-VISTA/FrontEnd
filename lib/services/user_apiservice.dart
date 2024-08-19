@@ -310,4 +310,74 @@ static Future<Map<String, dynamic>> makePayment({
   return _handleResponse(response);
 }
 
+
+  // Send message from user to advisor
+  static Future<Map<String, dynamic>> sendMessageFromUserToAdvisor({
+    required String senderId,
+    required String receiverId,
+    required String message,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/sendMessage/userToAdvisor'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'senderId': senderId,
+        'receiverId': receiverId,
+        'message': message,
+      }),
+    );
+    return _handleResponse(response);
+  }
+
+  // Send message from advisor to user
+  static Future<Map<String, dynamic>> sendMessageFromAdvisorToUser({
+    required String senderId,
+    required String receiverId,
+    required String message,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/sendMessage/advisorToUser'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'senderId': senderId,
+        'receiverId': receiverId,
+        'message': message,
+      }),
+    );
+    return _handleResponse(response);
+  }
+
+static Future<List<dynamic>> fetchMessagesBetweenUserAndAdvisor({
+  required String userId,
+  required String advisorId,
+}) async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/messages/user/$userId/advisor/$advisorId'),
+  );
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body) as List<dynamic>;
+  } else {
+    final responseJson = jsonDecode(response.body);
+    throw Exception('Failed to fetch messages: ${responseJson['error']}');
+  }
+}
+
+  // Fetch messages between advisor and user
+  static Future<List<dynamic>> fetchMessagesBetweenAdvisorAndUser({
+    required String advisorId,
+    required String userId,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/messages/advisor/$advisorId/user/$userId'),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List;
+    } else {
+      final responseJson = jsonDecode(response.body);
+      throw Exception('Failed to fetch messages: ${responseJson['error']}');
+    }
+  }
+
+
+
 }

@@ -5,6 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vervevista/services/user_apiservice.dart'; // Make sure to import your UserApiService
 import 'package:vervevista/model/user_model.dart';
 class UserProvider with ChangeNotifier {
+
+
+  
 String? _userId =''; // Ensure _userId is not null
   List<User> _advisors = [];
   User? _advisor;
@@ -25,6 +28,9 @@ List<User> get advisors => _advisors;
   String? get error => _error;
     String? _errorMessage = '';
     String? get errorMessage => _errorMessage;
+  // Property to hold chat messages
+  List<Map<String, dynamic>> _messages = [];
+  List<Map<String, dynamic>> get messages => _messages;
 
   // Method to handle user signup
  Future<void> signupUser({
@@ -403,4 +409,115 @@ Future<void> makePayment({
       notifyListeners();
     }
   }
+
+  Future<void> sendMessageFromUserToAdvisor({
+  required String senderId,
+  required String receiverId,
+  required String message,
+}) async {
+  _isLoading = true;
+  notifyListeners();
+
+  try {
+    final result = await UserApiService.sendMessageFromUserToAdvisor(
+      senderId: senderId,
+      receiverId: receiverId,
+      message: message,
+    );
+
+    if (result.containsKey('error')) {
+      _error = result['error'];
+    } else {
+      // Handle successful message send, if needed
+      print('Message sent successfully.');
+      _error = null;
+    }
+  } catch (e) {
+    _error = 'Failed to send message: ${e.toString()}';
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
+Future<void> sendMessageFromAdvisorToUser({
+  required String senderId,
+  required String receiverId,
+  required String message,
+}) async {
+  _isLoading = true;
+  notifyListeners();
+
+  try {
+    final result = await UserApiService.sendMessageFromAdvisorToUser(
+      senderId: senderId,
+      receiverId: receiverId,
+      message: message,
+    );
+
+    if (result.containsKey('error')) {
+      _error = result['error'];
+    } else {
+      // Handle successful message send, if needed
+      print('Message sent successfully.');
+      _error = null;
+    }
+  } catch (e) {
+    _error = 'Failed to send message: ${e.toString()}';
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
+Future<void> fetchMessagesBetweenUserAndAdvisor({
+  required String userId,
+  required String advisorId,
+}) async {
+  _isLoading = true;
+  notifyListeners();
+
+  try {
+    // Fetch the messages from the API
+    final List<dynamic> fetchedMessages = await UserApiService.fetchMessagesBetweenUserAndAdvisor(
+      userId: userId,
+      advisorId: advisorId,
+    );
+
+    // Cast the dynamic list to List<Map<String, dynamic>>
+    _messages = fetchedMessages.cast<Map<String, dynamic>>();
+
+    _error = null;
+  } catch (e) {
+    _error = 'Failed to fetch messages: ${e.toString()}';
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
+
+
+Future<void> fetchMessagesBetweenAdvisorAndUser({
+  required String advisorId,
+  required String userId,
+}) async {
+  _isLoading = true;
+  notifyListeners();
+
+  try {
+    final messages = await UserApiService.fetchMessagesBetweenAdvisorAndUser(
+      advisorId: advisorId,
+      userId: userId,
+    );
+
+    // Handle the messages as needed, e.g., store in state or process
+    print('Messages fetched: $messages');
+
+    _error = null;
+  } catch (e) {
+    _error = 'Failed to fetch messages: ${e.toString()}';
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
+}
+
 }
