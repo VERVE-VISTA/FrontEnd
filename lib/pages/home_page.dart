@@ -90,12 +90,11 @@ class _HomePageState extends State<HomePage> {
 
     final List<Widget> _userPages = [
       MarketingSMHome(), // User's home page
-      SecondContainer(),
+ 
     ];
 
     final List<Widget> _advisorPages = [
       UsersListScreen(advisorId: _userProvider.advisorId ?? ""), // Handle potential null advisorId
-      ThirdContainer(),
     ];
 
     return Scaffold(

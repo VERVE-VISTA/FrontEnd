@@ -63,7 +63,7 @@ void initState() {
     if (userProvider.userId.isNotEmpty) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+        MaterialPageRoute(builder: (context) => MarketingSMHome()),
       );
     }
   } catch (e) {
