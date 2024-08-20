@@ -159,16 +159,7 @@ userProvider.saveAdvisorIdLocally(advisorId);
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        TextButton(
-                          onPressed: () {
-                            Get.toNamed('/forgotpassword');
-                          },
-                          child: const Text(
-                            'Forgot Password',
-                            style: TextStyle(color: Color(0xFFD835FB)),
-                          ),
-                        ),
+                  
                         const SizedBox(height: 20),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
