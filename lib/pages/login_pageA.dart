@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:provider/provider.dart';
 import 'package:vervevista/pages/home_page.dart';
 import 'package:vervevista/pages/marketing_sm_home.dart';
 import 'package:vervevista/pages/signup_pageA.dart';
+import 'package:vervevista/pages/user_list_screen.dart';
 import 'package:vervevista/providers/user_provider.dart';
 
 class LoginPageA extends StatefulWidget {
@@ -18,16 +18,12 @@ class _LoginPageState extends State<LoginPageA> {
   bool _obscureText = true;
   bool _isLoading = false;
 
-@override
-void initState() {
-  super.initState();
-  
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    usernameController.text = userProvider.username;
-    passwordController.text = userProvider.password;
+  @override
+  void initState() {
+    super.initState();
+    // Removed initialization here
   }
   
-
   void _togglePasswordVisibility() {
     setState(() {
       _obscureText = !_obscureText;
@@ -35,45 +31,54 @@ void initState() {
   }
 
   Future<void> _loginUser() async {
-  final String username = usernameController.text;
-  final String password = passwordController.text;
+    final String username = usernameController.text;
+    final String password = passwordController.text;
 
-  if (username.isEmpty || password.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please fill in all fields')),
-    );
-    return;
-  }
-
-  setState(() {
-    _isLoading = true;
-  });
-
-  try {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    
-    // Pass the required parameters correctly here
-    await userProvider.signinAdvisor(username: username, password: password);
-    
-    await userProvider.saveUserDetailsLocally(); // Save userId locally
-
-    if (userProvider.userId.isNotEmpty) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please fill in all fields')),
       );
+      return;
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to login: ${e.toString()}')),
-    );
-  } finally {
+
     setState(() {
-      _isLoading = false;
+      _isLoading = true;
     });
+
+
+   // Inside the method where navigation occurs
+try {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.signinAdvisor(username: username, password: password);
+
+  await userProvider.saveUserDetailsLocally(); // Save user details locally
+  final advisorId = userProvider.userId ?? ""; // Ensure advisorId is not null
+userProvider.saveAdvisorIdLocally(advisorId);
+
+  if (userProvider.userId.isNotEmpty) {
+    print('Navigating to UsersListScreen with advisorId: $advisorId'); // Debug statement
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UsersListScreen(advisorId: advisorId),
+      ),
+    );
+  } else {
+        print('empty advisorId: $advisorId'); // Debug statement
+
+    print('userProvider.userId is empty'); // Debug statement
   }
+} catch (e) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Failed to login: ${e.toString()}')),
+  );
+} finally {
+  setState(() {
+    _isLoading = false;
+  });
 }
 
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,13 +159,13 @@ void initState() {
                             ),
                           ),
                         ),
-                          const SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         TextButton(
                           onPressed: () {
                             Get.toNamed('/forgotpassword');
                           },
                           child: const Text(
-                            'Forget Password',
+                            'Forgot Password',
                             style: TextStyle(color: Color(0xFFD835FB)),
                           ),
                         ),

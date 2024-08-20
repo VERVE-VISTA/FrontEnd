@@ -7,6 +7,7 @@ import 'package:vervevista/pages/second_container.dart';
 import 'package:vervevista/pages/simple_container.dart';
 import 'package:vervevista/pages/third_container.dart';
 import 'package:vervevista/pages/top_appbar.dart';
+import 'package:vervevista/pages/user_list_screen.dart';
 import 'package:vervevista/providers/user_provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,21 +17,22 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  late UserProvider _userProvider;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _userProvider = Provider.of<UserProvider>(context, listen: false);
       _navigateBasedOnUserRole();
     });
   }
 
   Future<void> _navigateBasedOnUserRole() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    await userProvider.fetchUserProfileById(userProvider.userId);
-    
-    final role = userProvider.getUserRole();
-    
+    await _userProvider.fetchUserProfileById(_userProvider.userId);
+
+    final role = _userProvider.getUserRole();
+
     setState(() {
       if (role == 'User') {
         _currentIndex = 0; // Set initial index for user role
@@ -79,20 +81,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  final List<Widget> _userPages = [
-    MarketingSMHome(), // User's home page
-    SecondContainer(),
-  ];
-
-  final List<Widget> _advisorPages = [
-    SimpleContainer(),
-    ThirdContainer()
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final role = userProvider.getUserRole();
+    final role = Provider.of<UserProvider>(context).getUserRole();
+
+    // Ensure that _userProvider is updated based on the context in build
+    _userProvider = Provider.of<UserProvider>(context);
+
+    final List<Widget> _userPages = [
+      MarketingSMHome(), // User's home page
+      SecondContainer(),
+    ];
+
+    final List<Widget> _advisorPages = [
+      UsersListScreen(advisorId: _userProvider.advisorId ?? ""), // Handle potential null advisorId
+      ThirdContainer(),
+    ];
 
     return Scaffold(
       appBar: TopAppBar(

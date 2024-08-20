@@ -379,5 +379,24 @@ static Future<List<dynamic>> fetchMessagesBetweenUserAndAdvisor({
   }
 
 
+  static Future<List<Map<String, dynamic>>> fetchSuccessfulPaymentsAndUsers(String advisorId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/advisor/$advisorId/payments'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        // Convert the List<dynamic> to List<Map<String, dynamic>>
+        return data.map((item) => item as Map<String, dynamic>).toList();
+      } else {
+        final responseJson = jsonDecode(response.body);
+        throw Exception('Failed to fetch successful payments and users: ${responseJson['error']}');
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch successful payments and users: ${e.toString()}');
+    }
+  }
+
+
 
 }

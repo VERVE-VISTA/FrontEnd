@@ -18,6 +18,14 @@ bool _isLoading = false;
     Map<String, dynamic>? _bookingResult;
   Map<String, dynamic>? get bookingResult => _bookingResult;
 
+  String? _advisorId =''; // Add this line
+  String get advisorId => _advisorId??""; // Add this line
+  set advisorId(String value) {
+    _advisorId = value;
+  }
+   List<Map<String, dynamic>> _successfulPaymentsAndUsers = [];
+  List<Map<String, dynamic>> get successfulPaymentsAndUsers => _successfulPaymentsAndUsers;
+
   User? _user;
   String get userId => _userId??"";
   String get username => _username;
@@ -126,31 +134,45 @@ List<User> get advisors => _advisors;
   }
 
   // Method to handle advisor signin
-  Future<void> signinAdvisor({
-    required String username,
-    required String password,
-  }) async {
-    final result = await UserApiService.signinAdvisor(
-      username: username,
-      password: password,
-    );
+  // Update the signinAdvisor method
+Future<void> signinAdvisor({
+  required String username,
+  required String password,
+}) async {
+  final result = await UserApiService.signinAdvisor(
+    username: username,
+    password: password,
+  );
 
-    if (result.containsKey('data')) {
-      // Handle successful advisor signin response
-      final data = result['data'] as Map<String, dynamic>;
-      _userId = data['userId'];
-      _username = username;
-      _password = password;
+  if (result.containsKey('data')) {
+    // Handle successful advisor signin response
+    final data = result['data'] as Map<String, dynamic>;
+    _userId = data['advisorId'];
+        _advisorId = data['advisorId'];
 
-      await saveUserDetailsLocally(); // Save details locally
+    
+    // Save only advisorId to SharedPreferences
+    await saveAdvisorIdLocally(_advisorId??"");
 
-      print('Advisor signin successful: $data');
-    } else if (result.containsKey('error')) {
-      // Handle advisor signin error
-      print('Advisor signin error: ${result['error']}');
-    }
+    print('Advisor signin successful: $data');
+  } else if (result.containsKey('error')) {
+    // Handle advisor signin error
+    print('Advisor signin error: ${result['error']}');
   }
-  
+}
+Future<String?> getAdvisorIdFromLocal() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  // Retrieve the advisorId from SharedPreferences
+  return prefs.getString('advisorId');
+}
+
+Future<void> saveAdvisorIdLocally(String advisorId) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  // Store only advisorId
+  await prefs.setString('advisorId', advisorId);
+}
 
   // Method to save user details locally
   Future<void> saveUserDetailsLocally() async {
@@ -439,35 +461,37 @@ Future<void> makePayment({
     notifyListeners();
   }
 }
-Future<void> sendMessageFromAdvisorToUser({
-  required String senderId,
-  required String receiverId,
-  required String message,
-}) async {
-  _isLoading = true;
-  notifyListeners();
-
-  try {
-    final result = await UserApiService.sendMessageFromAdvisorToUser(
-      senderId: senderId,
-      receiverId: receiverId,
-      message: message,
-    );
-
-    if (result.containsKey('error')) {
-      _error = result['error'];
-    } else {
-      // Handle successful message send, if needed
-      print('Message sent successfully.');
-      _error = null;
-    }
-  } catch (e) {
-    _error = 'Failed to send message: ${e.toString()}';
-  } finally {
-    _isLoading = false;
+Future<Map<String, dynamic>> sendMessageFromAdvisorToUser({
+    required String senderId,
+    required String receiverId,
+    required String message,
+  }) async {
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      final result = await UserApiService.sendMessageFromAdvisorToUser(
+        senderId: senderId,
+        receiverId: receiverId,
+        message: message,
+      );
+
+      if (result.containsKey('error')) {
+        _error = result['error'];
+        return result; // Return the result with error information
+      } else {
+        _error = null;
+        advisorId = result['advisorId'];
+        return result; // Return the successful result
+      }
+    } catch (e) {
+      _error = 'Failed to send message: ${e.toString()}';
+      return {'error': _error}; // Return an error map if an exception is caught
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
-}
 Future<void> fetchMessagesBetweenUserAndAdvisor({
   required String userId,
   required String advisorId,
@@ -519,5 +543,21 @@ Future<void> fetchMessagesBetweenAdvisorAndUser({
     notifyListeners();
   }
 }
+
+Future<void> fetchSuccessfulPaymentsAndUsers(String advisorId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final result = await UserApiService.fetchSuccessfulPaymentsAndUsers(advisorId);
+      _successfulPaymentsAndUsers = result;
+      _errorMessage = null;
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
 }
